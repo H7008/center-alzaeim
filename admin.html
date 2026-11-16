@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة الألعاب - مركز الزعيم</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -17,27 +15,17 @@
       font-family: Arial, sans-serif;
     }
 
-    .container {
-      max-width: 1100px;
-      margin: auto;
-    }
+    .container { max-width: 1100px; margin: auto; }
 
-    h1 {
-      color: #d6a735;
-      text-align: center;
-    }
+    h1 { color: #d6a735; text-align: center; }
 
-    .subtitle {
-      text-align: center;
-      color: #bbb;
-      margin-bottom: 25px;
-    }
+    .subtitle { text-align: center; color: #bbb; }
 
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
+    .panel {
+      background: #202a3b;
+      padding: 18px;
+      border-radius: 12px;
+      margin: 20px 0;
     }
 
     input, select, button {
@@ -45,17 +33,26 @@
       border-radius: 8px;
       border: 1px solid #555;
       font-size: 15px;
+      margin: 5px 0;
     }
 
     input, select {
-      background: #202a3b;
+      background: #101522;
       color: white;
     }
 
-    #search {
-      flex: 1;
-      min-width: 200px;
+    button {
+      background: #d6a735;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
     }
+
+    .hidden { display: none; }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .toolbar input { flex: 1; min-width: 180px; }
 
     .games {
       display: grid;
@@ -79,43 +76,61 @@
       border-radius: 6px;
     }
 
-    .game input, .game select {
-      width: 100%;
-      margin-top: 8px;
-    }
-
-    .game button {
-      width: 100%;
-      margin-top: 8px;
-      background: #d6a735;
-      color: #111;
-      border: 0;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    .game input, .game select { width: 100%; }
 
     .status {
       text-align: center;
       color: #d6a735;
       margin: 15px 0;
     }
+
+    #loginPanel { max-width: 450px; margin: 30px auto; }
+
+    #loginPanel input { width: 100%; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>مركز الزعيم</h1>
-    <p class="subtitle">لوحة إدارة مكتبة الألعاب</p>
+<div class="container">
+  <h1>مركز الزعيم</h1>
+  <p class="subtitle">لوحة إدارة مكتبة الألعاب</p>
 
+  <section id="loginPanel" class="panel">
+    <h3>تسجيل دخول الإدارة</h3>
+    <input id="email" type="email" placeholder="البريد الإلكتروني">
+    <input id="password" type="password" placeholder="كلمة المرور">
+    <button id="loginButton">تسجيل الدخول</button>
+    <p id="loginStatus" class="status"></p>
+  </section>
+
+  <section id="adminPanel" class="hidden">
     <div class="toolbar">
-      <input id="search" placeholder="ابحث برقم اللعبة أو اسمها...">
+      <input id="search" placeholder="ابحث عن لعبة...">
+      <button id="addButton">إضافة لعبة جديدة</button>
+      <button id="logoutButton">تسجيل الخروج</button>
+    </div>
+
+    <div id="addPanel" class="panel hidden">
+      <h3>إضافة لعبة</h3>
+      <input id="newName" placeholder="اسم اللعبة">
+      <select id="newPlatform">
+        <option value="">اختر الجهاز</option>
+        <option value="ps2">PS2</option>
+        <option value="ps4">PS4</option>
+        <option value="ps5">PS5</option>
+      </select>
+      <input id="newImage" type="file" accept="image/*">
+      <button id="saveNewButton">حفظ اللعبة</button>
     </div>
 
     <p class="status" id="status">جاري تحميل الألعاب...</p>
-
     <div class="games" id="games"></div>
-  </div>
+  </section>
+</div>
 
-  <script src="admin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="admin.js"></script>
+
 </body>
 </html>
