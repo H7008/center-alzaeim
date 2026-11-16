@@ -81,17 +81,16 @@ async function loadGames() {
 
 function displayGames() {
   const container = $("games");
-  const query = $("search").value.trim().toLowerCase();
+ const query = $("search").value.trim().toLowerCase();
 
-  container.replaceChildren();
+container.replaceChildren();
 
-  const filtered = games.filter(game =>
-    (game.name  "").toLowerCase().includes(query) 
-    String(game.id).includes(query)
-  );
+const filtered = games.filter(game =>
+  (game.name  "").toLowerCase().includes(query) 
+  String(game.id).includes(query)
+);
 
-  showStatus("عدد الألعاب: " + games.length);
-
+showStatus("عدد الألعاب: " + games.length);
   filtered.forEach(game => {
     const card = document.createElement("div");
     card.className = "game";
