@@ -26,6 +26,26 @@ function normalizePlatform(value) {
   return platform;
 }
 
+// تحميل البنرات الثلاثة من Supabase
+function loadBanners() {
+  if (!window.supabaseClient) {
+    console.error("Supabase غير متصل، تعذر تحميل البنرات");
+    return;
+  }
+
+  const slides = document.querySelectorAll(".slider-images .slide");
+
+  slides.forEach((slide, index) => {
+    const number = index + 1;
+
+    const { data } = window.supabaseClient.storage
+      .from("game-images")
+      .getPublicUrl("banners/banner" + number + ".jpg");
+
+    slide.src = data.publicUrl + "?v=" + Date.now();
+  });
+}
+
 // تحميل الألعاب من Supabase
 async function loadGames() {
   const grid = document.getElementById("gamesGrid");
@@ -215,6 +235,7 @@ function moveSlide(direction) {
 
 // تشغيل الموقع
 function startWebsite() {
+  loadBanners();
   loadGames();
 
   const searchInput = document.getElementById("searchInput");
