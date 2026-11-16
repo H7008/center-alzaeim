@@ -1,7 +1,30 @@
+
 let games = [];
 let selectedGames = [];
 let activeCategory = "all";
 let currentSlide = 0;
+
+// توحيد أسماء الأجهزة
+function normalizePlatform(value) {
+  const platform = String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/-/g, "");
+
+  if (["ps2", "playstation2", "بلي2", "بلاي2"].includes(platform)) {
+    return "ps2";
+  }
+
+  if (["ps4", "playstation4", "بلي4", "بلاي4"].includes(platform)) {
+    return "ps4";
+  }
+
+  if (["ps5", "playstation5", "بلي5", "بلاي5"].includes(platform)) {
+    return "ps5";
+  }
+
+  return platform;
+}
 
 // تحميل الألعاب من Supabase
 async function loadGames() {
@@ -12,39 +35,33 @@ async function loadGames() {
       throw new Error("Supabase غير متصل");
     }
 
-    if (grid) {
-      grid.textContent = "جاري تحميل الألعاب...";
-    }
+    if (grid) grid.textContent = "جاري تحميل الألعاب...";
 
-    const result = await window.supabaseClient
+    const { data, error } = await window.supabaseClient
       .from("games")
       .select("id, name, platform, image_url");
 
-    if (result.error) {
-      throw result.error;
-    }
+    if (error) throw error;
 
-    console.log("عدد الألعاب المستلمة:", result.data.length);
-    console.log("أول لعبة:", result.data[0]);
-
-    games = result.data.map((game, index) => ({
+    games = (data || []).map((game, index) => ({
       id: String(game.id || index + 1),
       name: game.name || "بدون اسم",
-      platform: String(game.platform || "غير محدد").toLowerCase().trim(),
+      platform: normalizePlatform(game.platform),
       image: game.image_url || ""
     }));
 
-    displayGames(games);
+    console.log("عدد الألعاب:", games.length);
+    console.log("تصنيفات الألعاب:", games.map(g => g.platform));
+
+    searchGames();
     updateCart();
 
   } catch (error) {
     console.error("خطأ تحميل الألعاب:", error);
-
-    if (grid) {
-      grid.textContent = "تعذر تحميل الألعاب";
-    }
+    if (grid) grid.textContent = "تعذر تحميل الألعاب";
   }
 }
+
 // عرض الألعاب
 function displayGames(list) {
   const grid = document.getElementById("gamesGrid");
@@ -124,7 +141,7 @@ function updateCart() {
   if (count) count.textContent = selectedGames.length;
 }
 
-// البحث
+// البحث والتصفية
 function searchGames() {
   const input = document.getElementById("searchInput");
   const query = input ? input.value.trim().toLowerCase() : "";
@@ -136,7 +153,7 @@ function searchGames() {
 
   if (activeCategory !== "all") {
     filtered = filtered.filter(game =>
-      normalizePlatform(game.platform) === normalizePlatform(activeCategory)
+      game.platform === normalizePlatform(activeCategory)
     );
   }
 
@@ -154,7 +171,9 @@ function filterGames(category, button) {
   if (button) button.classList.add("active");
 
   searchGames();
-}// إرسال القائمة إلى واتساب
+}
+
+// إرسال القائمة إلى واتساب
 function sendWhatsApp() {
   if (!selectedGames.length) {
     alert("اختار لعبة واحدة على الأقل");
@@ -168,8 +187,7 @@ function sendWhatsApp() {
   });
 
   window.open(
-    "https://wa.me/9647888702100?text=" +
-    encodeURIComponent(message),
+    "https://wa.me/9647888702100?text=" + encodeURIComponent(message),
     "_blank"
   );
 }
@@ -195,7 +213,7 @@ function moveSlide(direction) {
   showSlide(currentSlide + direction);
 }
 
-// تشغيل الموقع بعد تحميل الصفحة
+// تشغيل الموقع
 function startWebsite() {
   loadGames();
 
