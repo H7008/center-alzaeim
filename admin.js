@@ -289,6 +289,53 @@ get("saveNewButton").addEventListener("click", async () => {
 
 // البحث
 get("search").addEventListener("input", displayGames);
+// حفظ وتغيير صور البنرات
+async function saveBanner(number) {
+  const fileInput = get("banner" + number + "File");
+  const file = fileInput.files[0];
 
+  if (!file) {
+    alert("اختار صورة للبنر أولاً");
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    alert("الملف لازم يكون صورة");
+    return;
+  }
+
+  const button = get("saveBanner" + number);
+  const message = get("bannerStatus");
+
+  button.disabled = true;
+  message.textContent = "جاري رفع صورة البنر...";
+
+  try {
+    const filePath = "banners/banner" + number + ".jpg";
+
+    const { error } = await client.storage
+      .from("game-images")
+      .upload(filePath, file, {
+        upsert: true,
+        cacheControl: "0",
+        contentType: file.type
+      });
+
+    if (error) throw error;
+
+    message.textContent = "تم رفع البنر " + number + " بنجاح";
+
+  } catch (error) {
+    message.textContent = "خطأ: " + error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+[1, 2, 3].forEach(number => {
+  get("saveBanner" + number).addEventListener("click", () => {
+    saveBanner(number);
+  });
+});
 // بدء لوحة الإدارة
 checkLogin();
