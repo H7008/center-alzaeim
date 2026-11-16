@@ -1,0 +1,219 @@
+let games = [];
+let selectedGames = [];
+let activeCategory = "all";
+let currentSlide = 0;
+
+// تحميل الألعاب من Supabase
+async function loadGames() {
+  const grid = document.getElementById("gamesGrid");
+
+  try {
+    if (!window.supabaseClient) {
+      throw new Error("Supabase غير متصل");
+    }
+
+    if (grid) {
+      grid.textContent = "جاري تحميل الألعاب...";
+    }
+
+    const result = await window.supabaseClient
+      .from("games")
+      .select("id, name, platform, image_url");
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    console.log("عدد الألعاب المستلمة:", result.data.length);
+    console.log("أول لعبة:", result.data[0]);
+
+    games = result.data.map((game, index) => ({
+      id: String(game.id || index + 1),
+      name: game.name || "بدون اسم",
+      platform: String(game.platform || "غير محدد").toLowerCase().trim(),
+      image: game.image_url || ""
+    }));
+
+    displayGames(games);
+    updateCart();
+
+  } catch (error) {
+    console.error("خطأ تحميل الألعاب:", error);
+
+    if (grid) {
+      grid.textContent = "تعذر تحميل الألعاب";
+    }
+  }
+}
+// عرض الألعاب
+function displayGames(list) {
+  const grid = document.getElementById("gamesGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const count = document.getElementById("gameCount");
+  if (count) count.textContent = list.length + " لعبة";
+
+  if (!list.length) {
+    grid.textContent = "ماكو ألعاب تطابق البحث.";
+    return;
+  }
+
+  list.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "game-card";
+
+    const cover = document.createElement("div");
+    cover.className = "game-cover";
+
+    const img = document.createElement("img");
+    img.src = game.image;
+    img.alt = game.name;
+    img.loading = "lazy";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "contain";
+    img.style.background = "#101522";
+
+    cover.appendChild(img);
+
+    const info = document.createElement("div");
+    info.className = "game-info";
+
+    const title = document.createElement("h3");
+    title.textContent = game.name;
+
+    const details = document.createElement("p");
+    details.textContent = "رقم اللعبة: " + game.id;
+
+    const button = document.createElement("button");
+    const isSelected = selectedGames.some(g => g.id === game.id);
+
+    button.textContent = isSelected
+      ? "تم الاختيار ✓"
+      : "＋ إضافة للقائمة";
+
+    button.className = isSelected ? "selected-btn" : "add-btn";
+    button.onclick = () => toggleGame(game.id);
+
+    info.append(title, details, button);
+    card.append(cover, info);
+    grid.appendChild(card);
+  });
+}
+
+// إضافة أو إزالة لعبة من القائمة
+function toggleGame(id) {
+  const game = games.find(g => g.id === id);
+  if (!game) return;
+
+  if (selectedGames.some(g => g.id === id)) {
+    selectedGames = selectedGames.filter(g => g.id !== id);
+  } else {
+    selectedGames.push(game);
+  }
+
+  updateCart();
+  searchGames();
+}
+
+// تحديث عدد الألعاب المختارة
+function updateCart() {
+  const count = document.getElementById("cartCount");
+  if (count) count.textContent = selectedGames.length;
+}
+
+// البحث
+function searchGames() {
+  const input = document.getElementById("searchInput");
+  const query = input ? input.value.trim().toLowerCase() : "";
+
+  let filtered = games.filter(game =>
+    game.name.toLowerCase().includes(query) ||
+    game.id.includes(query)
+  );
+
+  if (activeCategory !== "all") {
+    filtered = filtered.filter(game =>
+      normalizePlatform(game.platform) === normalizePlatform(activeCategory)
+    );
+  }
+
+  displayGames(filtered);
+}
+
+// تصفية الألعاب حسب المنصة
+function filterGames(category, button) {
+  activeCategory = category;
+
+  document.querySelectorAll(".categories button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  if (button) button.classList.add("active");
+
+  searchGames();
+}// إرسال القائمة إلى واتساب
+function sendWhatsApp() {
+  if (!selectedGames.length) {
+    alert("اختار لعبة واحدة على الأقل");
+    return;
+  }
+
+  let message = "السلام عليكم، هاي الألعاب اللي اخترتها من مركز الزعيم:\n\n";
+
+  selectedGames.forEach(game => {
+    message += "🎮 " + game.name + " | رقم: " + game.id + "\n";
+  });
+
+  window.open(
+    "https://wa.me/9647888702100?text=" +
+    encodeURIComponent(message),
+    "_blank"
+  );
+}
+
+// القائمة الجانبية
+function toggleMenu() {
+  const categories = document.getElementById("categories");
+  if (categories) categories.classList.toggle("show-menu");
+}
+
+// البنرات
+function showSlide(index) {
+  const slides = document.querySelectorAll(".slide");
+  if (!slides.length) return;
+
+  slides.forEach(slide => slide.classList.remove("active"));
+
+  currentSlide = (index + slides.length) % slides.length;
+  slides[currentSlide].classList.add("active");
+}
+
+function moveSlide(direction) {
+  showSlide(currentSlide + direction);
+}
+
+// تشغيل الموقع بعد تحميل الصفحة
+function startWebsite() {
+  loadGames();
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", searchGames);
+  }
+
+  const slides = document.querySelectorAll(".slide");
+
+  if (slides.length) {
+    showSlide(0);
+    setInterval(() => moveSlide(1), 5000);
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startWebsite);
+} else {
+  startWebsite();
+}

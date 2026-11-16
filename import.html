@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>نقل ألعاب مركز الزعيم</title>
+  <style>
+    body {
+      background: #101522;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+      padding: 30px;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 15px auto;
+      padding: 14px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #d4af37;
+      color: black;
+      border: 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #status {
+      margin: 25px auto;
+      max-width: 500px;
+      white-space: pre-wrap;
+      line-height: 2;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>مركز الزعيم</h2>
+  <h3>نقل الألعاب إلى الموقع</h3>
+
+  <input id="email" type="email" placeholder="الإيميل">
+  <input id="password" type="password" placeholder="كلمة المرور">
+
+  <button id="start">ابدأ النقل</button>
+
+  <div id="status">أدخل الإيميل وكلمة المرور للبدء</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const client = window.supabase.createClient(
+      "https://dyddnpudffqzdbjzkwac.supabase.co",
+      "sb_publishable_JQYr90QlDjNPCp9CGKdGQw_-Bxm_QSj"
+    );
+
+    const button = document.getElementById("start");
+    const statusBox = document.getElementById("status");
+
+    button.onclick = async function () {
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        statusBox.textContent = "اكتب الإيميل وكلمة المرور أولاً";
+        return;
+      }
+
+      button.disabled = true;
+      statusBox.textContent = "جاري تسجيل الدخول...";
+
+      try {
+
+        const login = await client.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (login.error) {
+          throw login.error;
+        }
+
+        statusBox.textContent = "تم تسجيل الدخول. جاري قراءة الألعاب...";
+
+        const filesResponse = await fetch("images-list.json");
+        const namesResponse = await fetch("games.json");
+
+        if (!filesResponse.ok || !namesResponse.ok) {
+          throw new Error("لم يتم العثور على ملفات الألعاب");
+        }
+
+        const files = await filesResponse.json();
+        const names = await namesResponse.json();
+
+        let success = 0;
+        let failed = 0;
+        let skipped = 0;
+
+        for (let i = 0; i < files.length; i++) {
+
+          const file = files[i];
+
+          try {
+
+            statusBox.textContent =
+              "جاري نقل اللعبة " + (i + 1) +
+              " من " + files.length + "\n" + file;
+
+            const gameData = names[file];
+
+            let name = file.replace(/\.[^/.]+$/, "");
+            let platform = "غير محدد";
+
+            if (typeof gameData === "string") {
+              name = gameData;
+            } else if (gameData !== null && typeof gameData === "object") {
+              name = gameData.name || name;
+              platform = gameData.platform || "غير محدد";
+            }
+
+            const path = "games/" + encodeURIComponent(file);
+
+            const publicData = client.storage
+              .from("game-images")
+              .getPublicUrl(path);
+
+            const imageUrl = publicData.data.publicUrl;
+
+            const existing = await client
+              .from("games")
+              .select("id")
+              .eq("image_url", imageUrl)
+              .limit(1);
+
+            if (existing.error) {
+              throw existing.error;
+            }
+
+            if (existing.data && existing.data.length > 0) {
+              skipped++;
+              continue;
+            }
+
+            const imageResponse = await fetch(
+              "images/" + encodeURIComponent(file)
+            );
+
+            if (!imageResponse.ok) {
+              throw new Error("تعذر قراءة صورة اللعبة");
+            }const imageBlob = await imageResponse.blob();
+
+            const upload = await client.storage
+              .from("game-images")
+              .upload(path, imageBlob, {
+                upsert: true,
+                contentType: imageBlob.type || "image/jpeg"
+              });
+
+            if (upload.error) {
+              throw upload.error;
+            }
+
+            const insert = await client
+              .from("games")
+              .insert({
+                name: name,
+                platform: platform,
+                image_url: imageUrl
+              });
+
+            if (insert.error) {
+              throw insert.error;
+            }
+
+            success++;
+
+          } catch (error) {
+            failed++;
+            console.error("خطأ في اللعبة: " + file, error);
+          }
+
+        }
+
+        statusBox.textContent =
+          "انتهى النقل!\n" +
+          "نجح: " + success + "\n" +
+          "فشل: " + failed + "\n" +
+          "موجود مسبقاً: " + skipped + "\n" +
+          "المجموع: " + files.length;
+
+      } catch (error) {
+
+        statusBox.textContent =
+          "حدث خطأ:\n" + error.message;
+
+        console.error(error);
+
+      } finally {
+        button.disabled = false;
+      }
+
+    };
+  </script>
+
+</body>
+</html>

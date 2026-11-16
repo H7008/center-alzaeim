@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز الزعيم | ألعاب PS4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">
+     <img src="banners/logo/logo.jpg" class="logo-icon" alt="شعار مركز الزعيم">
+      <div>
+        <h2>مركز الزعيم</h2>
+        <span>CENTER ALZAEIM</span>
+      </div>
+    </div>
+
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+  </header>
+<div class="hero-slider">
+  <button class="slider-btn prev" onclick="moveSlide(-1)">❮</button>
+
+  <div class="slider-images">
+    <img src="banners/banner1.jpg" class="slide active">
+    <img src="banners/banner2.jpg" class="slide">
+    <img src="banners/banner3.jpg" class="slide">
+  </div>
+
+  <button class="slider-btn next" onclick="moveSlide(1)">❯</button>
+</div>
+ <nav class="categories" id="categories">
+  <button class="active" onclick="filterGames('all',this)">جميع الألعاب</button>
+  <button onclick="filterGames('ps2',this)">PS2</button>
+  <button onclick="filterGames('ps4',this)">PS4</button>
+  <button onclick="filterGames('ps5',this)">PS5</button>
+</nav>
+
+  <main class="container">
+
+    <section class="hero">
+      <span>مركز الزعيم للألعاب</span>
+      <h1>مكتبة ألعاب البلايستيشن</h1>
+      <p>اختار ألعابك وخلي الباقي علينا</p>
+    </section>
+
+    <section class="search-section">
+      <input id="searchInput" type="search"
+        placeholder="ابحث عن لعبة أو رقم اللعبة..."
+        oninput="searchGames()">
+    </section>
+
+    <div class="section-title">
+      <h2>الألعاب المتوفرة</h2>
+      <span id="gameCount">0 لعبة</span>
+    </div>
+
+    <section class="games-grid" id="gamesGrid">
+    </section>
+
+  </main>
+
+  <div class="cart-bar">
+    <div>
+      <span>الألعاب المختارة</span>
+      <strong id="cartCount">0</strong>
+    </div>
+    <button onclick="sendWhatsApp()">
+      إرسال إلى واتساب
+    </button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

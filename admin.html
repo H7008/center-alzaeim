@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الألعاب - مركز الزعيم</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101522;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    h1 {
+      color: #d6a735;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #bbb;
+      margin-bottom: 25px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #555;
+      font-size: 15px;
+    }
+
+    input, select {
+      background: #202a3b;
+      color: white;
+    }
+
+    #search {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 15px;
+    }
+
+    .game {
+      background: #202a3b;
+      border: 1px solid #3b4658;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .game img {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: contain;
+      background: #101522;
+      border-radius: 6px;
+    }
+
+    .game input, .game select {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .game button {
+      width: 100%;
+      margin-top: 8px;
+      background: #d6a735;
+      color: #111;
+      border: 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .status {
+      text-align: center;
+      color: #d6a735;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>مركز الزعيم</h1>
+    <p class="subtitle">لوحة إدارة مكتبة الألعاب</p>
+
+    <div class="toolbar">
+      <input id="search" placeholder="ابحث برقم اللعبة أو اسمها...">
+    </div>
+
+    <p class="status" id="status">جاري تحميل الألعاب...</p>
+
+    <div class="games" id="games"></div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
