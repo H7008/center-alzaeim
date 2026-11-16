@@ -187,7 +187,7 @@ function sendWhatsApp() {
   });
 
   window.open(
-    "https://wa.me/9647888721000?text=" + encodeURIComponent(message),
+    "https://wa.me/07888721000?text=" + encodeURIComponent(message),
     "_blank"
   );
 }
