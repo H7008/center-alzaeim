@@ -165,7 +165,8 @@ function displayGames() {
     remove.style.color = "white";
 
     remove.onclick = async () => {
-      if (!confirm("متأكد تريد حذف هذه اللعبة؟")) return;const { error } = await client
+      if (!confirm("متأكد تريد حذف هذه اللعبة؟")) return;
+      const { error } = await client
         .from("games")
         .delete()
         .eq("id", game.id);
