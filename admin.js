@@ -1,96 +1,138 @@
+
 const client = window.supabaseClient;
 
 let games = [];
 
-const $ = (id) => document.getElementById(id);
+const get = (id) => document.getElementById(id);
 
-function showStatus(message) {
-  $("status").textContent = message;
+function status(message) {
+  get("status").textContent = message;
 }
 
-function showLoginStatus(message) {
-  $("loginStatus").textContent = message;
+function loginStatus(message) {
+  get("loginStatus").textContent = message;
 }
 
+// تسجيل الدخول
 async function checkLogin() {
   const { data, error } = await client.auth.getSession();
 
   if (error) {
-    showLoginStatus(error.message);
+    loginStatus(error.message);
     return;
   }
 
-  if (data.session) {
-    $("loginPanel").classList.add("hidden");
-    $("adminPanel").classList.remove("hidden");
+  const loggedIn = !!data.session;
+
+  get("loginPanel").classList.toggle("hidden", loggedIn);
+  get("adminPanel").classList.toggle("hidden", !loggedIn);
+
+  if (loggedIn) {
     await loadGames();
-  } else {
-    $("loginPanel").classList.remove("hidden");
-    $("adminPanel").classList.add("hidden");
   }
 }
 
-$("loginButton").onclick = async () => {
-  const email = $("email").value.trim();
-  const password = $("password").value;
+get("loginButton").addEventListener("click", async () => {
+  const email = get("email").value.trim();
+  const password = get("password").value;
 
   if (!email || !password) {
-    showLoginStatus("اكتب الإيميل وكلمة المرور");
+    loginStatus("اكتب الإيميل وكلمة المرور");
     return;
   }
 
-  showLoginStatus("جاري تسجيل الدخول...");
+  const button = get("loginButton");
+  button.disabled = true;
+  loginStatus("جاري تسجيل الدخول...");
 
-  const { error } = await client.auth.signInWithPassword({
-    email,
-    password
-  });
+  try {
+    const { error } = await client.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+
+    loginStatus("");
+    await checkLogin();
+
+  } catch (error) {
+    loginStatus("خطأ: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// تسجيل الخروج
+get("logoutButton").addEventListener("click", async () => {
+  const { error } = await client.auth.signOut();
 
   if (error) {
-    showLoginStatus("تعذر تسجيل الدخول: " + error.message);
+    alert(error.message);
     return;
   }
 
-  showLoginStatus("");
-  await checkLogin();
-};
+  get("adminPanel").classList.add("hidden");
+  get("loginPanel").classList.remove("hidden");
+  loginStatus("تم تسجيل الخروج");
+});
 
-$("logoutButton").onclick = async () => {
-  await client.auth.signOut();
-  $("adminPanel").classList.add("hidden");
-  $("loginPanel").classList.remove("hidden");
-  showLoginStatus("تم تسجيل الخروج");
-};
-
+// تحميل الألعاب
 async function loadGames() {
-  showStatus("جاري تحميل الألعاب...");
+  status("جاري تحميل الألعاب...");
 
-  const { data, error } = await client
-    .from("games")
-    .select("id, name, platform, image_url")
-    .order("id");
+  try {
+    const { data, error } = await client
+      .from("games")
+      .select("id, name, platform, image_url")
+      .order("id");
 
-  if (error) {
-    showStatus("خطأ تحميل الألعاب: " + error.message);
-    return;
+    if (error) throw error;
+
+    games = data || [];
+    displayGames();
+
+  } catch (error) {
+    status("خطأ تحميل الألعاب: " + error.message);
   }
-
-  games = data || [];
-  displayGames();
 }
 
+// رفع الصور إلى Supabase
+async function uploadImage(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    throw new Error("اختار صورة صحيحة");
+  }
+
+  const extension = file.name.split(".").pop().toLowerCase();
+  const fileName = crypto.randomUUID() + "." + extension;
+
+  const { error } = await client.storage
+    .from("game-images")
+    .upload(fileName, file);
+
+  if (error) throw error;
+
+  const { data } = client.storage
+    .from("game-images")
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
+
+// عرض الألعاب
 function displayGames() {
-  const container = $("games");
- const query = $("search").value.trim().toLowerCase();
+  const container = get("games");
+  const query = get("search").value.trim().toLowerCase();
 
-container.replaceChildren();
+  container.replaceChildren();
 
-const filtered = games.filter(game =>
-  (game.name  "").toLowerCase().includes(query) 
-  String(game.id).includes(query)
-);
+  const filtered = games.filter(game =>
+    (game.name || "").toLowerCase().includes(query) ||
+    String(game.id).includes(query)
+  );
 
-showStatus("عدد الألعاب: " + games.length);
+  status("إجمالي الألعاب: " + games.length);
+
   filtered.forEach(game => {
     const card = document.createElement("div");
     card.className = "game";
@@ -110,10 +152,10 @@ showStatus("عدد الألعاب: " + games.length);
       ["ps4", "PS4"],
       ["ps5", "PS5"],
       ["غير محدد", "غير محدد"]
-    ].forEach(([value, label]) => {
+    ].forEach(item => {
       const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
+      option.value = item[0];
+      option.textContent = item[1];
       platform.appendChild(option);
     });
 
@@ -123,17 +165,16 @@ showStatus("عدد الألعاب: " + games.length);
     imageInput.type = "file";
     imageInput.accept = "image/*";
 
-    const save = document.createElement("button");
-    save.textContent = "حفظ التعديلات";
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "حفظ التعديلات";
 
-    save.onclick = async () => {
-      save.disabled = true;
-      save.textContent = "جاري الحفظ...";
+    saveButton.onclick = async () => {
+      saveButton.disabled = true;
 
       try {
         let imageUrl = game.image_url;
 
-        if (imageInput.files[0]) {
+        if (imageInput.files.length > 0) {
           imageUrl = await uploadImage(imageInput.files[0]);
         }
 
@@ -153,18 +194,21 @@ showStatus("عدد الألعاب: " + games.length);
 
       } catch (error) {
         alert("خطأ: " + error.message);
-        save.disabled = false;
-        save.textContent = "حفظ التعديلات";
+      } finally {
+        saveButton.disabled = false;
       }
     };
 
-    const remove = document.createElement("button");
-    remove.textContent = "حذف اللعبة";
-    remove.style.background = "#b83232";
-    remove.style.color = "white";
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "حذف اللعبة";
+    deleteButton.style.background = "#b83232";
+    deleteButton.style.color = "white";
 
-    remove.onclick = async () => {
-      if (!confirm("متأكد تريد حذف هذه اللعبة؟")) return;
+    deleteButton.onclick = async () => {
+      if (!confirm("هل أنت متأكد من حذف اللعبة؟")) return;
+
+      deleteButton.disabled = true;
+
       const { error } = await client
         .from("games")
         .delete()
@@ -172,6 +216,7 @@ showStatus("عدد الألعاب: " + games.length);
 
       if (error) {
         alert("تعذر الحذف: " + error.message);
+        deleteButton.disabled = false;
         return;
       }
 
@@ -179,51 +224,38 @@ showStatus("عدد الألعاب: " + games.length);
       await loadGames();
     };
 
-    card.append(img, name, platform, imageInput, save, remove);
+    card.append(
+      img,
+      name,
+      platform,
+      imageInput,
+      saveButton,
+      deleteButton
+    );
+
     container.appendChild(card);
   });
 }
 
-async function uploadImage(file) {
-  if (!file || !file.type.startsWith("image/")) {
-    throw new Error("اختار صورة صحيحة");
-  }
+// فتح وإغلاق إضافة لعبة
+get("addButton").addEventListener("click", () => {
+  get("addPanel").classList.toggle("hidden");
+});
 
-  const extension = file.name.split(".").pop().toLowerCase();
-  const fileName = crypto.randomUUID() + "." + extension;
-  const filePath = fileName;
+// إضافة لعبة جديدة
+get("saveNewButton").addEventListener("click", async () => {
+  const name = get("newName").value.trim();
+  const platform = get("newPlatform").value;
+  const file = get("newImage").files[0];
 
-  const { error } = await client.storage
-    .from("game-images")
-    .upload(filePath, file, {
-      upsert: false
-    });
-
-  if (error) throw error;
-
-  const { data } = client.storage
-    .from("game-images")
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
-}
-
-$("addButton").onclick = () => {
-  $("addPanel").classList.toggle("hidden");
-};
-
-$("saveNewButton").onclick = async () => {
-  const name = $("newName").value.trim();
-  const platform = $("newPlatform").value;
-  const file = $("newImage").files[0];
-
-  if (!name  !platform  !file) {
+  if (!name || !platform || !file) {
     alert("اكتب اسم اللعبة واختر الجهاز والصورة");
     return;
   }
 
-  $("saveNewButton").disabled = true;
-  $("saveNewButton").textContent = "جاري الحفظ...";
+  const button = get("saveNewButton");
+  button.disabled = true;
+  button.textContent = "جاري الحفظ...";
 
   try {
     const imageUrl = await uploadImage(file);
@@ -231,8 +263,8 @@ $("saveNewButton").onclick = async () => {
     const { error } = await client
       .from("games")
       .insert([{
-        name,
-        platform,
+        name: name,
+        platform: platform,
         image_url: imageUrl
       }]);
 
@@ -240,21 +272,23 @@ $("saveNewButton").onclick = async () => {
 
     alert("تمت إضافة اللعبة بنجاح");
 
-    $("newName").value = "";
-    $("newPlatform").value = "";
-    $("newImage").value = "";
-    $("addPanel").classList.add("hidden");
+    get("newName").value = "";
+    get("newPlatform").value = "";
+    get("newImage").value = "";
+    get("addPanel").classList.add("hidden");
 
     await loadGames();
 
   } catch (error) {
     alert("تعذر إضافة اللعبة: " + error.message);
   } finally {
-    $("saveNewButton").disabled = false;
-    $("saveNewButton").textContent = "حفظ اللعبة";
+    button.disabled = false;
+    button.textContent = "حفظ اللعبة";
   }
-};
+});
 
-$("search").addEventListener("input", displayGames);
+// البحث
+get("search").addEventListener("input", displayGames);
 
+// بدء لوحة الإدارة
 checkLogin();
