@@ -59,7 +59,7 @@ async function loadGames() {
 
     const { data, error } = await window.supabaseClient
       .from("games")
-      .select("id, name, platform, image_url");
+      .select("id, name, platform, image_url, created_at");
 
     if (error) throw error;
 
@@ -67,7 +67,8 @@ async function loadGames() {
       id: String(game.id || index + 1),
       name: game.name || "بدون اسم",
       platform: normalizePlatform(game.platform),
-      image: game.image_url || ""
+      image: game.image_url || "",
+      createdAt: game.created_at
     }));
 
     console.log("عدد الألعاب:", games.length);
@@ -161,7 +162,7 @@ function updateCart() {
   if (count) count.textContent = selectedGames.length;
 }
 
-// البحث والتصفية
+// البحث والتصفية والترتيب
 function searchGames() {
   const input = document.getElementById("searchInput");
   const query = input ? input.value.trim().toLowerCase() : "";
@@ -176,6 +177,19 @@ function searchGames() {
       game.platform === normalizePlatform(activeCategory)
     );
   }
+
+  // ترتيب الألعاب حسب تاريخ الإضافة
+  const sortSelect = document.getElementById("sortGames");
+  const sortOrder = sortSelect ? sortSelect.value : "newest";
+
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.createdAt || 0).getTime();
+    const dateB = new Date(b.createdAt || 0).getTime();
+
+    return sortOrder === "oldest"
+      ? dateA - dateB
+      : dateB - dateA;
+  });
 
   displayGames(filtered);
 }
