@@ -66,11 +66,16 @@
       </div>
     </section>
 
-    <section class="search-section">
-      <input id="searchInput" type="search"
-        placeholder="ابحث عن لعبة أو رقم اللعبة..."
-        oninput="searchGames()">
-    </section>
+   <section class="search-section">
+  <input id="searchInput" type="search"
+    placeholder="ابحث عن لعبة أو رقم اللعبة..."
+    oninput="searchGames()">
+
+  <select id="sortGames" onchange="searchGames()">
+    <option value="newest">الأحدث أولاً</option>
+    <option value="oldest">الأقدم أولاً</option>
+  </select>
+</section>
 
     <div class="section-title">
       <h2>الألعاب المتوفرة</h2>
